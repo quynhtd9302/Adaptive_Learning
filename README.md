@@ -24,55 +24,61 @@
 
 ### Database
 
-- MySQL
-- Schema chính: `database.sql`
-- Dữ liệu mẫu: `sample_data.sql`
+- MySQL 8 (local) / Amazon RDS (AWS)
+- Schema và dữ liệu mẫu do **Flyway** tự chạy khi backend khởi động:
+  - `backend/src/main/resources/db/migration/V1__schema.sql` — toàn bộ bảng
+  - `backend/src/main/resources/db/migration/V2__seed_data.sql` — dữ liệu mẫu (users, 8 khóa học, bài học, câu hỏi quiz)
+
+### Hạ tầng AWS
+
+VPC → Subnet → Security Group → Application Load Balancer → ECS Fargate → RDS MySQL → S3 → ElastiCache Redis.
+Hướng dẫn từng bước: **[docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md)**.
 
 ## Cấu trúc chính
 
 ```text
-D:\DATN
-├── backend
-├── frontend
-├── database.sql
-├── sample_data.sql
-├── PROJECT_REQUIREMENTS.md
-└── PROJECT_AUDIT.md
+Adaptive_Learning
+├── backend                     Spring Boot API (Dockerfile)
+│   └── src/main/resources
+│       ├── application.yml           cấu hình chung
+│       ├── application-dev.yml       máy local (mặc định)
+│       ├── application-prod.yml      AWS ECS (SPRING_PROFILES_ACTIVE=prod)
+│       └── db/migration              V1__schema.sql, V2__seed_data.sql
+├── frontend                    React + Vite, chạy bằng nginx (Dockerfile, nginx.conf)
+├── deploy                      task definition ECS, IAM policy, script đẩy image lên ECR
+├── docs/DEPLOY_AWS.md          hướng dẫn deploy AWS
+├── docker-compose.yml          CHỈ để chạy thử ở máy local (AWS dùng ECS Task Definition)
+└── PROJECT_REQUIREMENTS.md
 ```
 
-## Tạo database MySQL
+## Cách 1 — Chạy thử toàn bộ bằng Docker ở máy local
 
-Đăng nhập MySQL:
+> Chỉ dùng trên máy local. Trên AWS không dùng docker-compose và EC2 — xem [docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md).
 
 ```bash
-mysql -u root -p
+docker compose up -d --build
 ```
 
-Import schema:
+- Web: `http://localhost:3000`
+- API: `http://localhost:8080/api/courses`
+- Health: `http://localhost:8080/actuator/health`
+- MinIO (giả lập S3): `http://localhost:9001` (minioadmin / minioadmin)
+
+Xóa sạch: `docker compose down -v`.
+
+## Cách 2 — Chạy từng phần khi code
+
+Chỉ cần MySQL đang chạy, **không cần import SQL**: backend tự tạo database `adaptive_learning_db`, bảng và dữ liệu mẫu.
+
+Mặc định backend dùng `root` / mật khẩu trống. Nếu máy dùng mật khẩu khác, đặt biến môi trường trước khi chạy (không cần sửa file):
 
 ```bash
-mysql -u root -p < database.sql
+# PowerShell
+$env:DB_PASSWORD="123456"
 ```
 
-Import dữ liệu mẫu:
-
-```bash
-mysql -u root -p adaptive_learning_db < sample_data.sql
-```
-
-Database mặc định trong backend:
-
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/adaptive_learning_db
-spring.datasource.username=root
-spring.datasource.password=123456
-```
-
-Nếu máy dùng mật khẩu khác, sửa file:
-
-```text
-backend/src/main/resources/application.properties
-```
+> Database `adaptive_learning_db` đã có sẵn bảng từ trước: Flyway coi như đã chạy V1, V2 và không đụng vào dữ liệu cũ.
+> Muốn dữ liệu sạch theo seed mới thì `DROP DATABASE adaptive_learning_db;` rồi chạy lại backend.
 
 ## Chạy backend
 
@@ -122,7 +128,7 @@ http://localhost:5173
 
 ## Tài khoản demo
 
-Dữ liệu mẫu trong `sample_data.sql` có các tài khoản:
+Dữ liệu mẫu (`V2__seed_data.sql`) có các tài khoản (mật khẩu đã mã hóa BCrypt):
 
 | Vai trò | Email | Password |
 |---|---|---|
@@ -176,12 +182,12 @@ mvn test
 5. Tạo/sửa/xóa bài học.
 6. Upload video bài học.
 7. Tạo/sửa/xóa câu hỏi quiz.
-8. Quản lý file upload local.
+8. Quản lý file upload (local hoặc S3).
 
 ## Ghi chú hiện tại
 
 - Hệ thống chưa dùng Spring Security/JWT.
-- Password đang để plain text để dễ test theo yêu cầu giai đoạn đầu.
+- API backend chưa có xác thực (mọi người biết địa chỉ đều gọi được) — cần thêm Spring Security/JWT trước khi dùng thật.
 - Route guard frontend dựa trên `localStorage.user`.
 - Webcam hiện mới là UI bật/tắt camera, chưa tích hợp `face-api.js`.
 - Focus logs backend đã có API, nhưng frontend chưa tự gửi log từ AI.

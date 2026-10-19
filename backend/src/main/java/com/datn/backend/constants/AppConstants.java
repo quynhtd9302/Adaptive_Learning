@@ -57,6 +57,7 @@ public final class AppConstants {
     public static final class StorageProvider {
         public static final String LOCAL = "local";
         public static final String GOOGLE_DRIVE = "google_drive";
+        public static final String S3 = "s3";
     }
 
     public static final class FileFolder {

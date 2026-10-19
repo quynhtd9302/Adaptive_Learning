@@ -1,0 +1,43 @@
+# =====================================================================
+# DEV — chay tren may local (mvn spring-boot:run / IntelliJ).
+# Khong can cai Redis hay S3: cache trong RAM, file luu thu muc uploads/.
+# Mat khau MySQL khac mac dinh? Dat bien moi truong DB_PASSWORD, khong can sua file.
+# =====================================================================
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/adaptive_learning_db?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 5
+
+  cache:
+    type: ${CACHE_TYPE:simple}       # Cache trong RAM. Muon thu Redis local: CACHE_TYPE=redis
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+app:
+  storage:
+    type: ${STORAGE_TYPE:local}      # Luu file vao thu muc uploads/
+  upload:
+    base-url: ${APP_UPLOAD_BASE_URL:http://localhost:8080/uploads}
+  s3:
+    bucket: ${S3_BUCKET:}
+    region: ${AWS_REGION:ap-southeast-2}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}   # Vite dev server
+
+management:
+  endpoint:
+    health:
+      show-details: always           # Xem chi tiet DB/Redis khi debug
+  health:
+    redis:
+      enabled: ${REDIS_HEALTH:false}
+
+logging:
+  level:
+    com.datn: DEBUG

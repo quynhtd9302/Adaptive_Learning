@@ -85,4 +85,6 @@ export const CONTENT_STATUS = {
   PUBLISHED: 'published',
 }
 
-export const API_BASE_URL = 'http://localhost:8080/api'
+// Local (npm run dev): goi thang backend localhost:8080.
+// Build cho AWS: doc tu frontend/.env.production -> '/api' (ALB chuyen /api/* sang backend).
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'

@@ -1,0 +1,21 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadDbPasswordFromSSM",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameters"
+      ],
+      "Resource": "arn:aws:ssm:ap-southeast-2:482762106946:parameter/adaptive-learning/*"
+    },
+    {
+      "Sid": "CreateLogGroup",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

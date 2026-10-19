@@ -3,12 +3,14 @@ package com.datn.backend;
 import com.datn.backend.utils.LogUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.core.env.Environment;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @SpringBootApplication
+@EnableCaching
 public class BackendApplication {
 
 	public static void main(String[] args) {

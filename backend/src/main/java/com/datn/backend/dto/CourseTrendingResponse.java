@@ -2,7 +2,12 @@ package com.datn.backend.dto;
 
 import com.datn.backend.entity.Course;
 
-public class CourseTrendingResponse {
+import java.io.Serializable;
+
+/** Serializable de luu duoc vao Redis cache. */
+public class CourseTrendingResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long id;
     private String title;

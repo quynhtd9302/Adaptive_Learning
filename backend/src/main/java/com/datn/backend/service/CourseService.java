@@ -7,6 +7,9 @@ import com.datn.backend.dto.CourseTrendingResponse;
 import com.datn.backend.entity.Course;
 import com.datn.backend.repository.CourseRepository;
 import com.datn.backend.repository.LessonInteractionRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +20,11 @@ import java.util.List;
 
 @Service
 public class CourseService {
+
+    // Ten cache trong Redis (ElastiCache). TTL dat bang CACHE_TTL (mac dinh 10 phut).
+    public static final String CACHE_COURSES = "courses";
+    public static final String CACHE_COURSE = "course";
+    public static final String CACHE_TRENDING = "courses-trending";
 
     private final CourseRepository courseRepository;
     private final LessonInteractionRepository lessonInteractionRepository;
@@ -29,6 +37,7 @@ public class CourseService {
         this.lessonInteractionRepository = lessonInteractionRepository;
     }
 
+    @Cacheable(CACHE_COURSES)
     @Transactional(readOnly = true)
     public List<CourseResponse> getAllCourses() {
         return courseRepository.findAll()
@@ -37,6 +46,7 @@ public class CourseService {
                 .toList();
     }
 
+    @Cacheable(value = CACHE_COURSE, key = "#id")
     @Transactional(readOnly = true)
     public CourseResponse getCourseById(Long id) {
         return courseRepository.findById(id)
@@ -44,6 +54,8 @@ public class CourseService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found"));
     }
 
+    /** Luot xem/like thay doi lien tuc -> chap nhan tre toi da bang TTL cua cache. */
+    @Cacheable(CACHE_TRENDING)
     @Transactional(readOnly = true)
     public List<CourseTrendingResponse> getTrendingCourses() {
         return courseRepository.findAll()
@@ -61,6 +73,10 @@ public class CourseService {
         return CourseTrendingResponse.from(course, totalViews, totalLikes, totalDislikes);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_COURSES, allEntries = true),
+            @CacheEvict(value = CACHE_TRENDING, allEntries = true)
+    })
     @Transactional
     public CourseResponse createCourse(CourseRequest request) {
         Course course = new Course();
@@ -74,6 +90,11 @@ public class CourseService {
         return CourseResponse.from(courseRepository.save(course));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_COURSES, allEntries = true),
+            @CacheEvict(value = CACHE_TRENDING, allEntries = true),
+            @CacheEvict(value = CACHE_COURSE, key = "#id")
+    })
     @Transactional
     public CourseResponse updateCourse(Long id, CourseRequest request) {
         Course course = courseRepository.findById(id)
@@ -89,6 +110,11 @@ public class CourseService {
         return CourseResponse.from(courseRepository.save(course));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = CACHE_COURSES, allEntries = true),
+            @CacheEvict(value = CACHE_TRENDING, allEntries = true),
+            @CacheEvict(value = CACHE_COURSE, key = "#id")
+    })
     @Transactional
     public void deleteCourse(Long id) {
         if (!courseRepository.existsById(id)) {

@@ -1,0 +1,18 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Build
+backend/target/
+frontend/node_modules/
+frontend/dist/
+node_modules/
+
+# File upload khi chay local (tren AWS luu o S3)
+uploads/
+backend/uploads/
+
+# Bien moi truong / bi mat
+.env
+*.pem

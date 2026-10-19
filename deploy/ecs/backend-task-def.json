@@ -1,0 +1,78 @@
+{
+  "family": "adaptive-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "arn:aws:iam::482762106946:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::482762106946:role/adaptive-learning-task-role",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "482762106946.dkr.ecr.ap-southeast-2.amazonaws.com/adaptive-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "name": "backend-8080",
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
+        },
+        {
+          "name": "DB_URL",
+          "value": "jdbc:mysql://<RDS_ENDPOINT>:3306/adaptive_learning_db?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true"
+        },
+        {
+          "name": "DB_USERNAME",
+          "value": "admin"
+        },
+        {
+          "name": "APP_UPLOAD_BASE_URL",
+          "value": "/uploads"
+        },
+        {
+          "name": "STORAGE_TYPE",
+          "value": "local"
+        },
+        {
+          "name": "CACHE_TYPE",
+          "value": "simple"
+        },
+        {
+          "name": "REDIS_HEALTH",
+          "value": "false"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "ap-southeast-2"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:ssm:ap-southeast-2:482762106946:parameter/adaptive-learning/db-password"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/adaptive-backend",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-southeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

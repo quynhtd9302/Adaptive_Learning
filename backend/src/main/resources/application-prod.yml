@@ -1,0 +1,49 @@
+# =====================================================================
+# PROD — chay tren AWS ECS Fargate (SPRING_PROFILES_ACTIVE=prod).
+# Gia tri lay tu bien moi truong trong ECS Task Definition:
+#   DB_URL, DB_USERNAME        -> environment
+#   DB_PASSWORD                -> secrets (SSM Parameter Store)
+# Bien bat buoc khong co mac dinh: thieu la app bao loi ngay khi khoi dong (fail fast).
+# =====================================================================
+spring:
+  # ---------- Amazon RDS MySQL ----------
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+
+  # ---------- Amazon ElastiCache Redis ----------
+  cache:
+    type: ${CACHE_TYPE:redis}        # Chua tao ElastiCache thi dat CACHE_TYPE=simple
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      ssl:
+        enabled: ${REDIS_SSL:false}  # true neu ElastiCache bat "Encryption in transit"
+      timeout: 2s
+
+app:
+  # ---------- Amazon S3 ----------
+  storage:
+    type: ${STORAGE_TYPE:s3}         # Chua tao bucket thi dat STORAGE_TYPE=local
+  upload:
+    base-url: ${APP_UPLOAD_BASE_URL:/uploads}   # Frontend + backend chung domain qua ALB
+  s3:
+    bucket: ${S3_BUCKET:}
+    region: ${AWS_REGION:ap-southeast-2}
+  # Frontend va backend chung domain qua ALB -> khong can CORS
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:}
+
+# ---------- Health check cho ALB ----------
+management:
+  endpoint:
+    health:
+      show-components: always        # Hien trang thai db/redis (UP/DOWN)
+      show-details: never            # An chi tiet ket noi
+  health:
+    redis:
+      enabled: ${REDIS_HEALTH:true}  # Chua co Redis thi dat REDIS_HEALTH=false

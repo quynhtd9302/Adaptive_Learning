@@ -1,0 +1,84 @@
+# =====================================================================
+# Cau hinh CHUNG cho moi moi truong.
+# Cau hinh rieng: application-dev.yml (may local), application-prod.yml (AWS).
+#
+# Chon moi truong bang bien SPRING_PROFILES_ACTIVE:
+#   - Khong dat gi           -> dev  (BackendApplication dat san profile mac dinh = dev)
+#   - SPRING_PROFILES_ACTIVE=prod -> AWS ECS (dat trong Task Definition)
+# =====================================================================
+spring:
+  application:
+    name: backend
+
+  # Khong dat SPRING_PROFILES_ACTIVE -> dung dev (ap dung ca khi chay test, IntelliJ, mvn)
+  profiles:
+    default: dev
+
+  jpa:
+    hibernate:
+      ddl-auto: none            # Schema do Flyway quan ly
+    open-in-view: false
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQLDialect
+    properties:
+      hibernate:
+        format_sql: false
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 10000
+
+  # Flyway: tu tao bang + du lieu mau tu src/main/resources/db/migration
+  #   - DB trong (RDS moi): chay V1__schema.sql roi V2__seed_data.sql
+  #   - DB da co bang tu truoc (local cu): danh dau la da o phien ban 2, khong dung du lieu cu
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 2
+
+  cache:
+    redis:
+      time-to-live: ${CACHE_TTL:10m}
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful                     # Xu ly xong request dang chay roi moi tat
+  forward-headers-strategy: framework    # Doc X-Forwarded-* khi dung sau ALB
+
+# Health check cho ALB Target Group: GET /actuator/health
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  s3:
+    presign-minutes: 60
+    # 4 bien duoi chi dung khi gia lap S3 bang MinIO (docker compose local); tren AWS de trong
+    endpoint: ${S3_ENDPOINT:}
+    public-endpoint: ${S3_PUBLIC_ENDPOINT:}
+    path-style: ${S3_PATH_STYLE:false}
+    create-bucket: ${S3_CREATE_BUCKET:false}
+
+logging:
+  level:
+    root: WARN
+    com.datn: INFO
+    org.flywaydb: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.springframework.boot.autoconfigure: WARN
+    org.hibernate: WARN
+    com.zaxxer.hikari: WARN
+    org.apache.catalina: WARN
+    org.apache.tomcat: WARN

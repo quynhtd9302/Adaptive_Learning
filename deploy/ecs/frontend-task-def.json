@@ -1,0 +1,43 @@
+{
+  "family": "adaptive-frontend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "256",
+  "memory": "512",
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "arn:aws:iam::482762106946:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "frontend",
+      "image": "482762106946.dkr.ecr.ap-southeast-2.amazonaws.com/adaptive-frontend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "name": "frontend-80",
+          "containerPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "BACKEND_URL",
+          "value": "http://127.0.0.1:8080"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/adaptive-frontend",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-southeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ]
+}

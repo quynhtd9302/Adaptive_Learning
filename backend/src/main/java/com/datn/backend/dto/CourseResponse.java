@@ -2,9 +2,13 @@ package com.datn.backend.dto;
 
 import com.datn.backend.entity.Course;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class CourseResponse {
+/** Serializable de luu duoc vao Redis cache. */
+public class CourseResponse implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private Long id;
     private String title;
