@@ -15,6 +15,9 @@ public class AdaptiveAnswerResponse {
     private Integer correctAnswers;
     private Integer answeredCount;
     private Integer totalQuestions;
+    // chỉ có giá trị khi quiz kết thúc: level của người học trước và sau lần quiz này
+    private String previousLevel;
+    private String newLevel;
 
     @JsonProperty("isFinished")
     public Boolean getFinished() {
@@ -104,5 +107,21 @@ public class AdaptiveAnswerResponse {
 
     public void setTotalQuestions(Integer totalQuestions) {
         this.totalQuestions = totalQuestions;
+    }
+
+    public String getPreviousLevel() {
+        return previousLevel;
+    }
+
+    public void setPreviousLevel(String previousLevel) {
+        this.previousLevel = previousLevel;
+    }
+
+    public String getNewLevel() {
+        return newLevel;
+    }
+
+    public void setNewLevel(String newLevel) {
+        this.newLevel = newLevel;
     }
 }

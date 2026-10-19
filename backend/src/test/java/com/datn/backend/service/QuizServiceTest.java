@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -215,11 +216,50 @@ class QuizServiceTest {
     }
 
     @Test
-    void adaptiveQuizDoesNotUpdateUsersCurrentLevel() {
-        user.setCurrentLevel("hard");
-        QuizAttempt attempt = attempt(1);
+    void startAdaptiveQuizStartsAtUsersCurrentLevel() {
+        user.setCurrentLevel("medium");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson));
+        when(questionRepository.findByLessonId(1L)).thenReturn(List.of(
+                question(1L, "basic", "A"),
+                question(2L, "medium", "A"),
+                question(3L, "hard", "A")
+        ));
+        when(quizAttemptRepository.save(any(QuizAttempt.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        answerWith(
+        AdaptiveStartQuizResponse response = quizService.startAdaptiveQuiz(startRequest(3));
+
+        assertThat(response.getCurrentDifficulty()).isEqualTo("medium");
+        assertThat(response.getQuestion().getId()).isEqualTo(2L);
+    }
+
+    @Test
+    void startAdaptiveQuizFallsBackWhenLessonHasNoQuestionAtUsersLevel() {
+        user.setCurrentLevel("hard");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson));
+        when(questionRepository.findByLessonId(1L)).thenReturn(List.of(
+                question(1L, "basic", "A"),
+                question(2L, "medium", "A")
+        ));
+        when(quizAttemptRepository.save(any(QuizAttempt.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AdaptiveStartQuizResponse response = quizService.startAdaptiveQuiz(startRequest(3));
+
+        assertThat(response.getCurrentDifficulty()).isEqualTo("medium");
+        assertThat(response.getQuestion().getId()).isEqualTo(2L);
+    }
+
+    @Test
+    void finishResponseReportsLevelBeforeAndAfterQuiz() {
+        user.setCurrentLevel("basic");
+        QuizAttempt attempt = attempt(1);
+        doAnswer(invocation -> {
+            user.setCurrentLevel("medium");
+            return null;
+        }).when(learningProgressService).updateAfterQuizSubmit(attempt);
+
+        AdaptiveAnswerResponse response = answerWith(
                 attempt,
                 question(1L, "basic", "A"),
                 List.of(question(1L, "basic", "A")),
@@ -228,8 +268,9 @@ class QuizServiceTest {
                 10
         );
 
-        assertThat(user.getCurrentLevel()).isEqualTo("hard");
-        verify(userRepository, never()).save(any(User.class));
+        assertThat(response.getFinished()).isTrue();
+        assertThat(response.getPreviousLevel()).isEqualTo("basic");
+        assertThat(response.getNewLevel()).isEqualTo("medium");
     }
 
     @Test

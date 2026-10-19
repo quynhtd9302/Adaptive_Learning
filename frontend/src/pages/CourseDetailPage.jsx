@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getCourseById, getTrendingCourses } from '../api/courseApi.js'
 import { getLessons } from '../api/lessonApi.js'
 import { getProgressByUserId } from '../api/progressApi.js'
-import { CONTENT_STATUS, ROUTES, STORAGE_KEYS } from '../constants/index.js'
+import { CONTENT_STATUS, STORAGE_KEYS } from '../constants/index.js'
 
 function getCurrentUser() {
   try {

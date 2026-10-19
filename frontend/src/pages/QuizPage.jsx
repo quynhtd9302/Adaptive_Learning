@@ -4,6 +4,8 @@ import { generateFeedback } from '../api/feedbackApi.js'
 import { answerAdaptiveQuestion, startAdaptiveQuiz } from '../api/quizApi.js'
 import { ANSWER_OPTIONS, DIFFICULTY, QUIZ_CONFIG, ROUTES, STORAGE_KEYS } from '../constants/index.js'
 
+const LEVEL_ORDER = [DIFFICULTY.BASIC, DIFFICULTY.MEDIUM, DIFFICULTY.HARD]
+
 function getDifficultyLabel(level) {
   if (level === DIFFICULTY.MEDIUM) return 'Trung bình'
   if (level === DIFFICULTY.HARD) return 'Khó'
@@ -153,8 +155,18 @@ function QuizPage() {
           correctAnswers: data.correctAnswers ?? 0,
           totalQuestions: nextAnsweredCount,
           resultStatus: data.resultStatus || 'fail',
+          previousLevel: data.previousLevel,
+          newLevel: data.newLevel,
         })
         setCurrentQuestion(null)
+
+        // đồng bộ level mới vào user đã lưu để các trang khác hiển thị đúng
+        if (data.newLevel) {
+          const storedUser = getCurrentUser()
+          if (storedUser) {
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({ ...storedUser, currentLevel: data.newLevel }))
+          }
+        }
 
         setFeedbackGenerating(true)
         try {
@@ -232,7 +244,7 @@ function QuizPage() {
             <p className="eyebrow">Quiz thích ứng</p>
             <h1>Làm quiz theo năng lực hiện tại</h1>
             <p className="muted-text">
-              Hệ thống bắt đầu từ mức cơ bản và tự điều chỉnh độ khó sau từng câu trả lời.
+              Hệ thống bắt đầu từ trình độ hiện tại của bạn ({getDifficultyLabel(user?.currentLevel)}) và tự điều chỉnh độ khó sau từng câu trả lời.
             </p>
           </div>
           <div className="quiz-progress">
@@ -317,7 +329,25 @@ function QuizPage() {
                 <dt>Trạng thái</dt>
                 <dd>{result.resultStatus === 'pass' ? 'Đạt' : 'Chưa đạt'}</dd>
               </div>
+              {result.newLevel && (
+                <div>
+                  <dt>Trình độ</dt>
+                  <dd>
+                    {result.previousLevel && result.previousLevel !== result.newLevel
+                      ? `${getDifficultyLabel(result.previousLevel)} → ${getDifficultyLabel(result.newLevel)}`
+                      : getDifficultyLabel(result.newLevel)}
+                  </dd>
+                </div>
+              )}
             </dl>
+
+            {result.previousLevel && result.newLevel && result.previousLevel !== result.newLevel && (
+              <p className="state-message">
+                {LEVEL_ORDER.indexOf(result.newLevel) > LEVEL_ORDER.indexOf(result.previousLevel)
+                  ? `Chúc mừng! Trình độ của bạn đã tăng lên mức ${getDifficultyLabel(result.newLevel)}.`
+                  : `Trình độ của bạn giảm xuống mức ${getDifficultyLabel(result.newLevel)}. Hãy học lại bài này trước khi làm lại quiz.`}
+              </p>
+            )}
 
             {feedbackGenerating && <p className="state-message">Đang tạo phản hồi học tập...</p>}
             {feedbackError && <p className="alert">{feedbackError}</p>}

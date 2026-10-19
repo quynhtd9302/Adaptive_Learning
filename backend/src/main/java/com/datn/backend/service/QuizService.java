@@ -80,11 +80,13 @@ public class QuizService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         Lesson lesson = lessonRepository.findById(request.getLessonId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Lesson not found"));
-        Question firstQuestion = findFirstQuestionByDifficulty(lesson.getId(), "basic")
+        // bắt đầu ở level hiện tại của người học, bài không có câu ở level đó thì lấy độ khó gần nhất
+        Question firstQuestion = findNextQuestion(lesson.getId(), normalizeDifficulty(user.getCurrentLevel()), Set.of())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
-                        "No basic question available for this lesson"
+                        "No question available for this lesson"
                 ));
+        String firstDifficulty = normalizeDifficulty(firstQuestion.getDifficultyLevel());
 
         QuizAttempt attempt = new QuizAttempt();
         attempt.setUser(user);
@@ -98,7 +100,7 @@ public class QuizService {
         AdaptiveStartQuizResponse response = new AdaptiveStartQuizResponse();
         response.setAttemptId(savedAttempt.getId());
         response.setQuestion(AdaptiveQuizQuestionResponse.from(firstQuestion));
-        response.setCurrentDifficulty("basic");
+        response.setCurrentDifficulty(firstDifficulty);
         response.setAnsweredCount(0);
         response.setTotalQuestions(request.getTotalQuestions());
         return response;
@@ -301,10 +303,13 @@ public class QuizService {
         attempt.setFinishedAt(LocalDateTime.now());
 
         QuizAttempt savedAttempt = quizAttemptRepository.save(attempt);
+        String previousLevel = normalizeDifficulty(savedAttempt.getUser().getCurrentLevel());
         learningProgressService.updateAfterQuizSubmit(savedAttempt);
 
         AdaptiveAnswerResponse response = new AdaptiveAnswerResponse();
         response.setFinished(true);
+        response.setPreviousLevel(previousLevel);
+        response.setNewLevel(normalizeDifficulty(savedAttempt.getUser().getCurrentLevel()));
         response.setCorrect(correct);
         response.setCurrentDifficulty(currentDifficulty);
         response.setNextDifficulty(nextDifficulty);
@@ -315,13 +320,6 @@ public class QuizService {
         response.setAnsweredCount(answeredCount);
         response.setTotalQuestions(totalQuestions);
         return response;
-    }
-
-    private Optional<Question> findFirstQuestionByDifficulty(Long lessonId, String difficulty) {
-        return questionRepository.findByLessonId(lessonId)
-                .stream()
-                .filter(question -> difficulty.equals(normalizeDifficulty(question.getDifficultyLevel())))
-                .min(Comparator.comparing(Question::getId));
     }
 
     private Optional<Question> findNextQuestion(Long lessonId, String preferredDifficulty, Set<Long> answeredQuestionIds) {

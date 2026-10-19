@@ -41,7 +41,11 @@ function AdminDropdown() {
   }, [])
 
   // close on route change
-  useEffect(() => { setOpen(false) }, [location.pathname])
+  const [prevPathname, setPrevPathname] = useState(location.pathname)
+  if (prevPathname !== location.pathname) {
+    setPrevPathname(location.pathname)
+    setOpen(false)
+  }
 
   const isActive = ADMIN_MENU.flatMap(g => g.items).some(item => location.pathname.startsWith(item.to))
 

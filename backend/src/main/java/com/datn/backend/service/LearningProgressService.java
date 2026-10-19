@@ -1,5 +1,6 @@
 package com.datn.backend.service;
 
+import com.datn.backend.constants.AppConstants;
 import com.datn.backend.dto.LearningProgressResponse;
 import com.datn.backend.entity.LearningProgress;
 import com.datn.backend.entity.Lesson;
@@ -42,6 +43,34 @@ public class LearningProgressService {
     @Transactional
     public void updateAfterQuizSubmit(QuizAttempt attempt) {
         updateLearningProgress(attempt);
+        updateUserLevel(attempt);
+    }
+
+    /**
+     * Điểm quiz >= 80: tăng 1 level, < 50: giảm 1 level (người học cần học lại), còn lại giữ nguyên.
+     */
+    public static String calculateNewLevel(String currentLevel, Float score) {
+        float quizScore = score == null ? 0.0F : score;
+        String level = AppConstants.Difficulty.MEDIUM.equals(currentLevel) || AppConstants.Difficulty.HARD.equals(currentLevel)
+                ? currentLevel
+                : AppConstants.Difficulty.BASIC;
+
+        if (quizScore >= AppConstants.QuizResult.LEVEL_UP_SCORE) {
+            return AppConstants.Difficulty.BASIC.equals(level) ? AppConstants.Difficulty.MEDIUM : AppConstants.Difficulty.HARD;
+        }
+        if (quizScore < AppConstants.QuizResult.LEVEL_DOWN_SCORE) {
+            return AppConstants.Difficulty.HARD.equals(level) ? AppConstants.Difficulty.MEDIUM : AppConstants.Difficulty.BASIC;
+        }
+        return level;
+    }
+
+    private void updateUserLevel(QuizAttempt attempt) {
+        User user = attempt.getUser();
+        String newLevel = calculateNewLevel(user.getCurrentLevel(), attempt.getScore());
+        if (!newLevel.equals(user.getCurrentLevel())) {
+            user.setCurrentLevel(newLevel);
+            userRepository.save(user);
+        }
     }
 
     @Transactional

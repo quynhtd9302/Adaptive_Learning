@@ -1,14 +1,17 @@
 package com.datn.backend.utils;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-@Slf4j
+
 public class LogUtils {
+    private static final Logger log = LoggerFactory.getLogger(LogUtils.class);
+
     public static void logApplicationStartup(Environment env) {
         String protocol = "http";
         if (env.getProperty("server.ssl.key-store") != null) {

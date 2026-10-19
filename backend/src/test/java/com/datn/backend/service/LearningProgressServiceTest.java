@@ -18,9 +18,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LearningProgressServiceTest {
@@ -48,18 +48,61 @@ class LearningProgressServiceTest {
                 courseRepository
         );
 
-        when(learningProgressRepository.findByUserIdAndLessonIdOrderByUpdatedAtDesc(1L, 1L))
+        lenient().when(learningProgressRepository.findByUserIdAndLessonIdOrderByUpdatedAtDesc(1L, 1L))
                 .thenReturn(List.of());
-        when(learningProgressRepository.save(any(LearningProgress.class)))
+        lenient().when(learningProgressRepository.save(any(LearningProgress.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
-    void updateAfterQuizSubmitOnlyUpdatesProgressAndDoesNotChangeUserCurrentLevel() {
+    void highScoreIncreasesUserLevelAndUpdatesProgress() {
+        User user = user("basic");
+
+        learningProgressService.updateAfterQuizSubmit(attempt(user, 85.0F));
+
+        assertThat(user.getCurrentLevel()).isEqualTo("medium");
+        verify(userRepository).save(user);
+        verify(learningProgressRepository).save(any(LearningProgress.class));
+    }
+
+    @Test
+    void lowScoreDecreasesUserLevel() {
+        User user = user("hard");
+
+        learningProgressService.updateAfterQuizSubmit(attempt(user, 40.0F));
+
+        assertThat(user.getCurrentLevel()).isEqualTo("medium");
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void middleScoreKeepsUserLevel() {
+        User user = user("medium");
+
+        learningProgressService.updateAfterQuizSubmit(attempt(user, 60.0F));
+
+        assertThat(user.getCurrentLevel()).isEqualTo("medium");
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void calculateNewLevelStaysWithinBounds() {
+        assertThat(LearningProgressService.calculateNewLevel("hard", 100.0F)).isEqualTo("hard");
+        assertThat(LearningProgressService.calculateNewLevel("basic", 0.0F)).isEqualTo("basic");
+        assertThat(LearningProgressService.calculateNewLevel("medium", 80.0F)).isEqualTo("hard");
+        assertThat(LearningProgressService.calculateNewLevel("medium", 50.0F)).isEqualTo("medium");
+        assertThat(LearningProgressService.calculateNewLevel("medium", 49.9F)).isEqualTo("basic");
+        assertThat(LearningProgressService.calculateNewLevel(null, null)).isEqualTo("basic");
+    }
+
+    private User user(String level) {
         User user = new User();
         user.setId(1L);
-        user.setCurrentLevel("basic");
+        user.setCurrentLevel(level);
+        return user;
+    }
 
+    private QuizAttempt attempt(User user, Float score) {
         Lesson lesson = new Lesson();
         lesson.setId(1L);
 
@@ -67,12 +110,7 @@ class LearningProgressServiceTest {
         attempt.setId(1L);
         attempt.setUser(user);
         attempt.setLesson(lesson);
-        attempt.setScore(85.0F);
-
-        learningProgressService.updateAfterQuizSubmit(attempt);
-
-        assertThat(user.getCurrentLevel()).isEqualTo("basic");
-        verify(userRepository, never()).save(any(User.class));
-        verify(learningProgressRepository).save(any(LearningProgress.class));
+        attempt.setScore(score);
+        return attempt;
     }
 }

@@ -40,6 +40,9 @@ public final class AppConstants {
         public static final int RESPONSE_TIME_HARD = 45;
         public static final int RESPONSE_TIME_MEDIUM = 30;
         public static final int RESPONSE_TIME_BASIC = 20;
+        // Sau mỗi lần quiz: điểm >= LEVEL_UP_SCORE thì tăng 1 level, < LEVEL_DOWN_SCORE thì giảm 1 level
+        public static final float LEVEL_UP_SCORE = 80.0F;
+        public static final float LEVEL_DOWN_SCORE = 50.0F;
     }
 
     public static final class Recommendation {

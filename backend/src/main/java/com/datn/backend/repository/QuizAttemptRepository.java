@@ -13,6 +13,8 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttempt, Long> 
 
     List<QuizAttempt> findByLessonId(Long lessonId);
 
+    List<QuizAttempt> findByUserIdAndLessonId(Long userId, Long lessonId);
+
     Optional<QuizAttempt> findTopByUserIdAndLessonIdOrderByIdDesc(Long userId, Long lessonId);
 
     long countByLessonId(Long lessonId);

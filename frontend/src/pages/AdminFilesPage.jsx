@@ -71,7 +71,13 @@ function AdminFilesPage() {
     return () => { alive = false }
   }, [])
 
-  useEffect(() => { setPage(1) }, [search, filterType, pageSize])
+  // quay về trang 1 khi bộ lọc thay đổi (reset ngay trong render thay vì dùng effect)
+  const filterKey = JSON.stringify([search, filterType, pageSize])
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey)
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey)
+    setPage(1)
+  }
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim()

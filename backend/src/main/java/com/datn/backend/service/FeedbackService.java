@@ -55,8 +55,7 @@ public class FeedbackService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Quiz attempt not found"));
 
         Float quizScore = quizAttempt.getScore() == null ? 0.0F : quizAttempt.getScore();
-        LocalDateTime sessionStart = quizAttempt.getStartedAt() != null ? quizAttempt.getStartedAt() : LocalDateTime.now().minusMinutes(60);
-        Float focusScore = calculateAverageFocusScore(user.getId(), lesson.getId(), sessionStart);
+        Float focusScore = calculateSessionFocusScore(quizAttempt);
         String recommendation = buildRecommendation(quizScore, focusScore);
 
         Feedback feedback = new Feedback();
@@ -110,8 +109,35 @@ public class FeedbackService {
                 .toList();
     }
 
-    private Float calculateAverageFocusScore(Long userId, Long lessonId, LocalDateTime since) {
-        List<FocusLog> focusLogs = focusLogRepository.findByUserIdAndLessonIdAndRecordedAtAfter(userId, lessonId, since);
+    /**
+     * Focus logs được ghi khi xem video bài học, tức là TRƯỚC khi bắt đầu quiz.
+     * Phiên học của một lần quiz = từ lúc kết thúc lần quiz trước (cùng user/lesson) đến lúc nộp quiz này.
+     * Nếu phiên đó không có log (vd làm lại quiz ngay mà không xem lại video) thì dùng toàn bộ log trước đó.
+     */
+    private Float calculateSessionFocusScore(QuizAttempt attempt) {
+        Long userId = attempt.getUser().getId();
+        Long lessonId = attempt.getLesson().getId();
+        LocalDateTime sessionEnd = attempt.getFinishedAt() != null ? attempt.getFinishedAt() : LocalDateTime.now();
+        LocalDateTime sessionStart = quizAttemptRepository.findByUserIdAndLessonId(userId, lessonId)
+                .stream()
+                .filter(previous -> previous.getId() < attempt.getId())
+                .map(QuizAttempt::getFinishedAt)
+                .filter(finishedAt -> finishedAt != null && finishedAt.isBefore(sessionEnd))
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+
+        List<FocusLog> logsBeforeEnd = focusLogRepository.findByUserIdAndLessonId(userId, lessonId)
+                .stream()
+                .filter(log -> log.getRecordedAt() != null && !log.getRecordedAt().isAfter(sessionEnd))
+                .toList();
+        List<FocusLog> sessionLogs = sessionStart == null
+                ? logsBeforeEnd
+                : logsBeforeEnd.stream().filter(log -> log.getRecordedAt().isAfter(sessionStart)).toList();
+
+        return averageFocusScore(sessionLogs.isEmpty() ? logsBeforeEnd : sessionLogs);
+    }
+
+    private Float averageFocusScore(List<FocusLog> focusLogs) {
         double average = focusLogs.stream()
                 .map(FocusLog::getFocusScore)
                 .filter(score -> score != null)

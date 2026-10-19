@@ -5,7 +5,7 @@ import { getUserDashboard } from '../api/dashboardApi.js'
 import { getFeedbacksByUserId } from '../api/feedbackApi.js'
 import { getLessons } from '../api/lessonApi.js'
 import { getProgressByUserId } from '../api/progressApi.js'
-import { QUIZ_CONFIG, RECOMMENDATION, ROUTES } from '../constants/index.js'
+import { QUIZ_CONFIG, RECOMMENDATION } from '../constants/index.js'
 import { getStoredUser, normalizeList, toNumericId } from '../utils/flowHelpers.js'
 
 function average(items, field) {

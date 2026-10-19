@@ -119,6 +119,7 @@ function LessonDetailPage() {
   const webcamStreamRef = useRef(null)
   const detectionTimerRef = useRef(null)
   const logTimerRef = useRef(null)
+  const activeLessonIdRef = useRef(null)
   const focusFramesRef = useRef(0)
   const totalFramesRef = useRef(0)
   const distractedCountRef = useRef(0)
@@ -152,12 +153,39 @@ function LessonDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  const sendFocusLog = useCallback(async (lessonId) => {
+    const user = getCurrentUser()
+    if (!user?.id || totalFramesRef.current === 0) return
+
+    const score = Math.round((focusFramesRef.current / totalFramesRef.current) * 100)
+    const status = score >= 70 ? 'focused' : score >= 40 ? 'distracted' : 'no_face'
+
+    setFocusScore(score)
+    focusFramesRef.current = 0
+    totalFramesRef.current = 0
+
+    try {
+      // không gửi recordedAt: backend tự gán giờ server, đồng bộ với thời gian quiz
+      await createFocusLog({
+        userId: user.id,
+        lessonId: Number(lessonId),
+        status,
+        focusScore: score,
+      })
+    } catch {
+      // log thất bại không block UI
+    }
+  }, [])
+
   const stopDetection = useCallback(() => {
     clearInterval(detectionTimerRef.current)
     clearInterval(logTimerRef.current)
     detectionTimerRef.current = null
     logTimerRef.current = null
-  }, [])
+    // gửi nốt các frame chưa đồng bộ (vd tắt camera hoặc chuyển sang làm quiz trước kỳ log tiếp theo)
+    if (activeLessonIdRef.current) sendFocusLog(activeLessonIdRef.current)
+    activeLessonIdRef.current = null
+  }, [sendFocusLog])
 
   const stopCamera = useCallback(() => {
     stopDetection()
@@ -258,36 +286,13 @@ function LessonDetailPage() {
 
   useEffect(() => () => { stopCamera() }, [stopCamera])
 
-  const sendFocusLog = useCallback(async (lessonId) => {
-    const user = getCurrentUser()
-    if (!user?.id || totalFramesRef.current === 0) return
-
-    const score = Math.round((focusFramesRef.current / totalFramesRef.current) * 100)
-    const status = score >= 70 ? 'focused' : score >= 40 ? 'distracted' : 'no_face'
-
-    setFocusScore(score)
-    focusFramesRef.current = 0
-    totalFramesRef.current = 0
-
-    try {
-      await createFocusLog({
-        userId: user.id,
-        lessonId: Number(lessonId),
-        status,
-        focusScore: score,
-        recordedAt: new Date().toISOString().replace('Z', ''),
-      })
-    } catch {
-      // log thất bại không block UI
-    }
-  }, [])
-
   const startDetection = useCallback((lessonId) => {
     stopDetection()
     focusFramesRef.current = 0
     totalFramesRef.current = 0
     distractedCountRef.current = 0
     drowsyCountRef.current = 0
+    activeLessonIdRef.current = lessonId
 
     detectionTimerRef.current = setInterval(async () => {
       const video = webcamVideoRef.current
