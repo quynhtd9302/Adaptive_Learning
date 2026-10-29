@@ -31,7 +31,7 @@
         },
         {
           "name": "DB_URL",
-          "value": "jdbc:mysql://<RDS_ENDPOINT>:3306/adaptive_learning_db?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true"
+          "value": "jdbc:mysql://adaptive-db.cj8qim2cq9xv.ap-southeast-2.rds.amazonaws.com:3306/adaptive_learning_db?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=utf8&allowPublicKeyRetrieval=true"
         },
         {
           "name": "DB_USERNAME",
@@ -43,19 +43,27 @@
         },
         {
           "name": "STORAGE_TYPE",
-          "value": "local"
+          "value": "s3"
         },
         {
           "name": "CACHE_TYPE",
-          "value": "simple"
+          "value": "redis"
         },
         {
           "name": "REDIS_HEALTH",
-          "value": "false"
+          "value": "true"
         },
         {
           "name": "AWS_REGION",
           "value": "ap-southeast-2"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "adaptive-redis.wrrxql.ng.0001.apse2.cache.amazonaws.com"
+        },
+        {
+          "name": "S3_BUCKET",
+          "value": "adaptive-learning-uploads-482762"
         }
       ],
       "secrets": [

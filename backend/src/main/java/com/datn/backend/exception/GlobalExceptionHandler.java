@@ -3,6 +3,8 @@ package com.datn.backend.exception;
 import com.datn.backend.dto.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,8 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidationException(
@@ -56,6 +60,11 @@ public class GlobalExceptionHandler {
         if (status == null) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
         }
+        if (status.is5xxServerError()) {
+            // Loi phia server (vd upload S3 that bai): ghi log kem nguyen nhan goc de xem tren CloudWatch
+            log.error("{} {} -> {} {}", request.getMethod(), request.getRequestURI(),
+                    status.value(), exception.getReason(), exception);
+        }
 
         String message = exception.getReason();
         if (message == null || message.isBlank()) {
@@ -78,6 +87,8 @@ public class GlobalExceptionHandler {
             RuntimeException exception,
             HttpServletRequest request
     ) {
+        // Client chi nhan thong bao chung; chi tiet + stack trace ghi vao log (CloudWatch Logs tren ECS)
+        log.error("{} {} -> 500", request.getMethod(), request.getRequestURI(), exception);
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",

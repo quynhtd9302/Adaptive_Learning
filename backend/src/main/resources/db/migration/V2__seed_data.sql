@@ -519,7 +519,13 @@ WHERE c.title = 'Cơ sở dữ liệu MySQL'
   );
 
 INSERT INTO lessons (course_id, video_file_id, title, description, video_url, duration, order_number, created_at, updated_at)
-SELECT c.id, NULL, 'Tạo database, table và kiểu dữ liệu', 'Thực hành 
+SELECT c.id, NULL, 'Tạo database, table và kiểu dữ liệu', 'Thực hành CREATE DATABASE, CREATE TABLE và lựa chọn kiểu dữ liệu phù hợp.', NULL, 40, 2, NOW(), NOW()
+FROM courses c
+WHERE c.title = 'Cơ sở dữ liệu MySQL'
+  AND NOT EXISTS (
+      SELECT 1 FROM lessons l
+      WHERE l.course_id = c.id AND l.title = 'Tạo database, table và kiểu dữ liệu'
+  );
 
 INSERT INTO lessons (course_id, video_file_id, title, description, video_url, duration, order_number, created_at, updated_at)
 SELECT c.id, NULL, 'SELECT, WHERE, ORDER BY', 'Học cách truy vấn dữ liệu, lọc bản ghi và sắp xếp kết quả.', NULL, 40, 3, NOW(), NOW()
@@ -1588,7 +1594,15 @@ WHERE c.title = 'Cơ sở dữ liệu MySQL'
   );
 
 INSERT INTO questions (lesson_id, question_content, option_a, option_b, option_c, option_d, correct_answer, difficulty_level, created_at, updated_at)
-SELECT l.id, 'Công cụ hoặc khái niệm nào thường được dùng trong bài "Tạo database, table và kiểu dữ liệu"?', 'Sao chép mã hoặc câu lệnh mà không hiểu mục đích', 'Bỏ qua kiểm tra kết quả sau khi thực hành', 'Chỉ thay đổi màu giao diện mà không liên quan nội dung bài', '
+SELECT l.id, 'Công cụ hoặc khái niệm nào thường được dùng trong bài "Tạo database, table và kiểu dữ liệu"?', 'Sao chép mã hoặc câu lệnh mà không hiểu mục đích', 'Bỏ qua kiểm tra kết quả sau khi thực hành', 'Chỉ thay đổi màu giao diện mà không liên quan nội dung bài', 'CREATE DATABASE và CREATE TABLE', 'D', 'basic', NOW(), NOW()
+FROM lessons l
+JOIN courses c ON c.id = l.course_id
+WHERE c.title = 'Cơ sở dữ liệu MySQL'
+  AND l.title = 'Tạo database, table và kiểu dữ liệu'
+  AND NOT EXISTS (
+      SELECT 1 FROM questions q
+      WHERE q.lesson_id = l.id AND q.question_content = 'Công cụ hoặc khái niệm nào thường được dùng trong bài "Tạo database, table và kiểu dữ liệu"?'
+  );
 
 INSERT INTO questions (lesson_id, question_content, option_a, option_b, option_c, option_d, correct_answer, difficulty_level, created_at, updated_at)
 SELECT l.id, 'Khi áp dụng nội dung bài "Tạo database, table và kiểu dữ liệu", lựa chọn nào là cách làm hợp lý?', 'chọn kiểu dữ liệu theo ý nghĩa cột', 'Sao chép mã hoặc câu lệnh mà không hiểu mục đích', 'Chỉ thay đổi màu giao diện mà không liên quan nội dung bài', 'Tập trung vào thao tác ngoài phạm vi bài học', 'A', 'medium', NOW(), NOW()

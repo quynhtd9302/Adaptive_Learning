@@ -23,7 +23,7 @@ spring:
       port: ${REDIS_PORT:6379}
       ssl:
         enabled: ${REDIS_SSL:false}  # true neu ElastiCache bat "Encryption in transit"
-      timeout: 2s
+      timeout: ${REDIS_TIMEOUT:500ms}   # Redis cung VPC (<1ms); Redis loi -> bo qua cache nhanh, doc tu DB
 
 app:
   # ---------- Amazon S3 ----------

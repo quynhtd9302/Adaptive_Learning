@@ -1,4 +1,4 @@
-# Build 2 image va day len Amazon ECR.
+﻿# Build 2 image va day len Amazon ECR.
 # Can: Docker Desktop dang chay + AWS CLI da "aws configure".
 # Chay tu thu muc goc du an:
 #   .\deploy\push-ecr.ps1                 (tag = latest)
@@ -18,8 +18,12 @@ if ($LASTEXITCODE -ne 0) { throw "Dang nhap ECR that bai. Kiem tra 'aws configur
 foreach ($svc in @("backend", "frontend")) {
     $repo = "adaptive-$svc"
 
-    aws ecr describe-repositories --repository-names $repo --region $Region *> $null
-    if ($LASTEXITCODE -ne 0) {
+    # Repo chua ton tai -> aws ghi loi ra stderr; tam tat "Stop" de PowerShell 5.1 khong dung script
+    $ErrorActionPreference = "Continue"
+    aws ecr describe-repositories --repository-names $repo --region $Region 2>&1 | Out-Null
+    $exists = ($LASTEXITCODE -eq 0)
+    $ErrorActionPreference = "Stop"
+    if (-not $exists) {
         Write-Host "== Tao repository $repo" -ForegroundColor Cyan
         aws ecr create-repository --repository-name $repo --region $Region | Out-Null
     }

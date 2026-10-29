@@ -31,7 +31,7 @@
 
 ### Hạ tầng AWS
 
-VPC → Subnet → Security Group → Application Load Balancer → ECS Fargate → RDS MySQL → S3 → ElastiCache Redis.
+VPC (Public / Private / Data subnet) → NAT Gateway → Security Group → Application Load Balancer → ECS Fargate → RDS MySQL → S3 → ElastiCache Redis.
 Hướng dẫn từng bước: **[docs/DEPLOY_AWS.md](docs/DEPLOY_AWS.md)**.
 
 ## Cấu trúc chính

@@ -93,13 +93,13 @@ public class FileStorageService {
                 provider = AppConstants.StorageProvider.LOCAL;
             }
         } catch (IOException exception) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not store uploaded file");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not store uploaded file", exception);
         } catch (RuntimeException exception) {
             if (exception instanceof ResponseStatusException rse) {
                 throw rse;
             }
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-                    "Could not upload file to S3: " + exception.getMessage());
+            // Chi tiet loi AWS (bucket, request id, AccessDenied...) chi ghi log, khong tra ve client
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Could not upload file to S3", exception);
         }
 
         FileStorage fileStorage = new FileStorage();

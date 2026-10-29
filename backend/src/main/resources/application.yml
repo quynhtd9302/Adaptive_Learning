@@ -54,12 +54,19 @@ server:
   shutdown: graceful                     # Xu ly xong request dang chay roi moi tat
   forward-headers-strategy: framework    # Doc X-Forwarded-* khi dung sau ALB
 
-# Health check cho ALB Target Group: GET /actuator/health
+# Health check:
+#   - ALB Target Group: GET /actuator/health/liveness -> chi kiem tra app con song, KHONG phu thuoc DB/Redis
+#     (RDS failover hay Redis restart vai giay khong lam ALB kill het task backend)
+#   - Tu kiem tra bang tay: GET /actuator/health -> xem trang thai db, redis
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true            # Bat /actuator/health/liveness va /actuator/health/readiness
 
 app:
   s3:
